@@ -40,12 +40,14 @@
 git clone https://github.com/junior6666/AutoTask-UI-.git 
 cd AutoTask-UI-
 
-# 2️⃣ 创建虚拟环境（可选）
-conda create -n autotask-ui- python=3.9
-conda activate autotask-ui-
+# 2️⃣ 安装依赖 (推荐使用 uv)
+# 如果未安装 uv: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# 3️⃣ 安装依赖
-pip install -r requirements.txt
+# 同步环境 (自动创建 venv)
+uv sync
+
+# 3️⃣ 运行
+python main_plus.py
 ```
 
 首次启动即可看到主界面，立即创建演示任务！🥳
@@ -121,15 +123,8 @@ pyinstaller -F -w -i icon.ico --add-data "img;img" --name auto_Task2.0.8 main_pl
 开发完成后，请把**干净**的依赖导出，方便他人一键复现：
 
 ```bash
-# 进入虚拟环境
-conda activate autotask-ui-   # 或 venv 的 activate
-
-# ① 快速导出（含所有子依赖）
-pip freeze > requirements.txt
-
-# ② 仅导出项目真实 import 的库（更干净）
-pip install pipreqs
-pipreqs ./ --encoding=utf-8 --force
+# 使用 uv 导出 (保持 requirements.txt 与 uv.lock 同步)
+uv export --format requirements-txt --output-file requirements.txt --no-hashes
 ```
 
 > 若出现可编辑包（`@ file:///...`），请先 `pip uninstall -e .` 再执行。
