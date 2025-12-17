@@ -334,14 +334,6 @@ class StepConfigDialog(QDialog):
         if screen:
             bg_pixmap = screen.grabWindow(0)
             self._temp_screenshot = bg_pixmap  # 保持引用
-
-            # --- DEBUG: 保存截图以验证是否偏暗 ---
-            import os
-
-            debug_dir = os.path.join(os.getcwd(), "img")
-            os.makedirs(debug_dir, exist_ok=True)
-            bg_pixmap.save(os.path.join(debug_dir, "debug_bg.png"))
-            # -----------------------------------
         else:
             self._temp_screenshot = None
 

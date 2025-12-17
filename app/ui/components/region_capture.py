@@ -41,17 +41,9 @@ class RegionCaptureOverlay(QWidget):
 
         # 背景截图 - 如果未传入，尝试自动补救截取（此时可能包含淡出动画，但也比递归好）
         if background_pixmap and not background_pixmap.isNull():
-            print("✅ RegionCaptureOverlay received valid background_pixmap")
             self.background_pixmap = background_pixmap
         else:
-            print(
-                "⚠️ RegionCaptureOverlay received None/Null pixmap, attempting self-capture..."
-            )
             self.background_pixmap = QApplication.primaryScreen().grabWindow(0)
-            if self.background_pixmap.isNull():
-                print("❌ Self-capture failed! background_pixmap is Null")
-            else:
-                print("✅ Self-capture successful")
 
         # 设置窗口属性
         self.setFocusPolicy(Qt.StrongFocus)
