@@ -1835,20 +1835,22 @@ class AutomationUI(QMainWindow):
                 }
                 QWidget {
                     background-color: #f5f7fa;
+                    color: #333;
                 }
                 QGroupBox {
                     font-weight: bold;
                     border: 1px solid #d1d5db;
                     border-radius: 6px;
-                    margin-top: 1ex;
+                    margin-top: 20px;
+                    padding-top: 10px;
                     background-color: white;
                 }
                 QGroupBox::title {
                     subcontrol-origin: margin;
-                    subcontrol-position: top center;
-                    top: -1px;    
+                    subcontrol-position: top left;
+                    left: 10px;
                     padding: 0 5px;
-                    background-color: transparent;
+                    background-color: white;
                     color: #333;
                 }
                 QListWidget, QTableWidget, QLineEdit, QComboBox, QTimeEdit, QSpinBox, QPlainTextEdit {
@@ -1979,42 +1981,47 @@ class AutomationUI(QMainWindow):
                     font-weight: bold;
                     border: 1px solid #3f3f46;
                     border-radius: 6px;
-                    margin-top: 1ex;
+                    margin-top: 20px;
+                    padding-top: 10px;
                     background-color: #252526;
                 }
                 QGroupBox::title {
                     subcontrol-origin: margin;
-                    subcontrol-position: top center;
-                    top: -1px;    
+                    subcontrol-position: top left;
+                    left: 10px;
                     padding: 0 5px;
-                    background-color: transparent;
+                    background-color: #252526;
                     color: #dcdcdc;
                 }
                 QListWidget, QTableWidget, QLineEdit, QComboBox, QTimeEdit, QSpinBox, QPlainTextEdit {
-                    background-color: #252526;
+                    background-color: #1e1e1e;
                     border: 1px solid #3f3f46;
                     color: #dcdcdc;
-                    selection-background-color: #3e3e40;
                 }
                 QHeaderView::section {
-                    background-color: #3e3e40;
+                    background-color: #333337;
                     color: #dcdcdc;
                     border: none;
                     border-bottom: 1px solid #3f3f46;
                 }
+                QPushButton {
+                    color: #dcdcdc;
+                    background-color: #3e3e42;
+                    border: 1px solid #555;
+                }
                 QLabel {
                     color: #dcdcdc;
                 }
-                               QCheckBox {
+                QCheckBox {
                     color: #dcdcdc;
                     spacing: 8px;
                 }
                 QCheckBox::indicator {
                     width: 10px;
                     height: 10px;
-                    border: 2px solid #666;
+                    border: 2px solid #555;
                     border-radius: 4px;
-                    background: #2d2d30;
+                    background: #3e3e42;
                 }
                 QCheckBox::indicator:checked {
                     background: #4CAF50;
@@ -2024,82 +2031,85 @@ class AutomationUI(QMainWindow):
                     border-color: #4CAF50;
                 }
                 QListWidget::item:selected {
-                    background-color: #3e3e40;
+                    background-color: #37373d;
                 }
             """)
 
             # 应用按钮样式
             self.start_current_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #4CAF50;
-                    border: 1px solid #388E3C;
+                    background-color: #388E3C;
+                    border: 1px solid #2E7D32;
                     color: white;
                     padding: 5px;
                     border-radius: 4px;
                 }
                 QPushButton:hover {
-                    background-color: #388E3C;
+                    background-color: #2E7D32;
                 }
                 QPushButton:disabled {
-                    background-color: #81C784;
+                    background-color: #555;
+                    color: #888;
                 }
             """)
 
             self.stop_current_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #4CAF50;
-                    border: 1px solid #388E3C;
+                    background-color: #388E3C;
+                    border: 1px solid #2E7D32;
                     color: white;
                     padding: 5px;
                     border-radius: 4px;
                 }
                 QPushButton:hover {
-                    background-color: #388E3C;
+                    background-color: #2E7D32;
                 }
                 QPushButton:disabled {
-                    background-color: #81C784;
+                    background-color: #555;
+                    color: #888;
                 }
             """)
 
             self.save_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #4CAF50;
-                    border: 1px solid #388E3C;
+                    background-color: #388E3C;
+                    border: 1px solid #2E7D32;
                     color: white;
                     padding: 5px;
                     border-radius: 4px;
                 }
                 QPushButton:hover {
-                    background-color: #388E3C;
+                    background-color: #2E7D32;
                 }
                 QPushButton:disabled {
-                    background-color: #81C784;
+                    background-color: #555;
+                    color: #888;
                 }
             """)
 
             self.new_task_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #4CAF50;
-                    border: 1px solid #388E3C;
+                    background-color: #388E3C;
+                    border: 1px solid #2E7D32;
                     color: white;
                     padding: 5px;
                     border-radius: 4px;
                 }
                 QPushButton:hover {
-                    background-color: #388E3C;
+                    background-color: #2E7D32;
                 }
             """)
 
             self.clear_log_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #9E9E9E;
-                    border: 1px solid #757575;
-                    color: white;
+                    background-color: #555;
+                    border: 1px solid #333;
+                    color: #dcdcdc;
                     padding: 2px 5px;
                     border-radius: 3px;
                 }
                 QPushButton:hover {
-                    background-color: #757575;
+                    background-color: #666;
                 }
             """)
 
