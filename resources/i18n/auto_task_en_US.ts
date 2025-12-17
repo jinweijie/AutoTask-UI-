@@ -1,407 +1,407 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="zh_CN">
+<TS version="2.1" language="en_US">
 <context>
     <name>AutomationUI</name>
     <message>
         <source>Automation Task Manager</source>
-        <translation>自动化任务管理器</translation>
+        <translation>Automation Task Manager</translation>
     </message>
     <message>
         <source>📋 Task List</source>
-        <translation>📋 任务列表</translation>
+        <translation>📋 Task List</translation>
     </message>
     <message>
         <source>➕ New Task</source>
-        <translation>➕ 新建任务</translation>
+        <translation>➕ New Task</translation>
     </message>
     <message>
         <source>📝 Execution Log</source>
-        <translation>📝 执行日志</translation>
+        <translation>📝 Execution Log</translation>
     </message>
     <message>
         <source>Execution Log:</source>
-        <translation>执行日志:</translation>
+        <translation>Execution Log:</translation>
     </message>
     <message>
         <source>Clear Log</source>
-        <translation>清空日志</translation>
+        <translation>Clear Log</translation>
     </message>
     <message>
         <source>ℹ️ Task Info</source>
-        <translation>ℹ️ 任务信息</translation>
+        <translation>ℹ️ Task Info</translation>
     </message>
     <message>
         <source>Enter task name</source>
-        <translation>输入任务名称</translation>
+        <translation>Enter task name</translation>
     </message>
     <message>
         <source>Task Name:</source>
-        <translation>任务名称:</translation>
+        <translation>Task Name:</translation>
     </message>
     <message>
         <source>Status:</source>
-        <translation>当前状态:</translation>
+        <translation>Status:</translation>
     </message>
     <message>
         <source>Not running</source>
-        <translation>未运行</translation>
+        <translation>Not running</translation>
     </message>
     <message>
         <source>⏰ Schedule Settings</source>
-        <translation>⏰ 定时设置</translation>
+        <translation>⏰ Schedule Settings</translation>
     </message>
     <message>
         <source>Mode:</source>
-        <translation>执行方式:</translation>
+        <translation>Mode:</translation>
     </message>
     <message>
         <source>Time:</source>
-        <translation>执行时间:</translation>
+        <translation>Time:</translation>
     </message>
     <message>
         <source>Interval:</source>
-        <translation>重复间隔:</translation>
+        <translation>Interval:</translation>
     </message>
     <message>
         <source>Repeat:</source>
-        <translation>重复次数:</translation>
+        <translation>Repeat:</translation>
     </message>
     <message>
         <source>Run immediately</source>
-        <translation>立即执行</translation>
+        <translation>Run immediately</translation>
     </message>
     <message>
         <source>Scheduled</source>
-        <translation>定时执行</translation>
+        <translation>Scheduled</translation>
     </message>
     <message>
         <source>Unlimited</source>
-        <translation>无限</translation>
+        <translation>Unlimited</translation>
     </message>
     <message>
         <source>Use mouse wheel to adjust time
 Click to edit hour, minute, second</source>
-        <translation>使用鼠标滚轮调整时间
-单击可分别编辑时、分、秒</translation>
+        <translation>Use mouse wheel to adjust time
+Click to edit hour, minute, second</translation>
     </message>
     <message>
         <source> min</source>
-        <translation> 分钟</translation>
+        <translation> min</translation>
     </message>
     <message>
         <source>Use mouse wheel to adjust interval
 </source>
-        <translation>使用鼠标滚轮调整间隔
+        <translation>Use mouse wheel to adjust interval
 </translation>
     </message>
     <message>
         <source>Good night</source>
-        <translation>晚安时间</translation>
+        <translation>Good night</translation>
     </message>
     <message>
         <source>0 min</source>
-        <translation>0分钟</translation>
+        <translation>0 min</translation>
     </message>
     <message>
         <source>24 hrs</source>
-        <translation>24小时</translation>
+        <translation>24 hrs</translation>
     </message>
     <message>
         <source>⚙️ Steps Config</source>
-        <translation>⚙️ 操作步骤配置</translation>
+        <translation>⚙️ Steps Config</translation>
     </message>
     <message>
         <source>Type</source>
-        <translation>类型</translation>
+        <translation>Type</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation>描述</translation>
+        <translation>Description</translation>
     </message>
     <message>
         <source>Param</source>
-        <translation>参数</translation>
+        <translation>Param</translation>
     </message>
     <message>
         <source>Delay(s)</source>
-        <translation>延时(秒)</translation>
+        <translation>Delay(s)</translation>
     </message>
     <message>
         <source>➕ Add Step (A)</source>
-        <translation>➕ 添加步骤 (A)</translation>
+        <translation>➕ Add Step (A)</translation>
     </message>
     <message>
         <source>✏️ Edit Step (E)</source>
-        <translation>✏️ 编辑步骤 (E)</translation>
+        <translation>✏️ Edit Step (E)</translation>
     </message>
     <message>
         <source>➖ Remove Step (Del)</source>
-        <translation>➖ 删除步骤 (Del)</translation>
+        <translation>➖ Remove Step (Del)</translation>
     </message>
     <message>
         <source>📋 Copy Step</source>
-        <translation>📋 复制步骤</translation>
+        <translation>📋 Copy Step</translation>
     </message>
     <message>
         <source>⬆️ Up (↑)</source>
-        <translation>⬆️ 上移 (↑)</translation>
+        <translation>⬆️ Up (↑)</translation>
     </message>
     <message>
         <source>⬇️ Down (↓)</source>
-        <translation>⬇️ 下移 (↓)</translation>
+        <translation>⬇️ Down (↓)</translation>
     </message>
     <message>
         <source>▶️ Start Task</source>
-        <translation>▶️ 开始当前任务</translation>
+        <translation>▶️ Start Task</translation>
     </message>
     <message>
         <source>⏹️ Stop Task</source>
-        <translation>⏹️ 停止当前任务</translation>
+        <translation>⏹️ Stop Task</translation>
     </message>
     <message>
         <source>💾 Save Config</source>
-        <translation>💾 保存配置</translation>
+        <translation>💾 Save Config</translation>
     </message>
     <message>
         <source>⚙️ Settings</source>
-        <translation>⚙️ 设置</translation>
+        <translation>⚙️ Settings</translation>
     </message>
     <message>
         <source>Auto skip after image find timeout</source>
-        <translation>图片查找超时后自动跳过</translation>
+        <translation>Auto skip after image find timeout</translation>
     </message>
     <message>
         <source>Timeout:</source>
-        <translation>超时时间:</translation>
+        <translation>Timeout:</translation>
     </message>
     <message>
         <source>Instant Click</source>
-        <translation>直接点击</translation>
+        <translation>Instant Click</translation>
     </message>
     <message>
         <source>Minimize window during execution</source>
-        <translation>执行任务时最小化窗口</translation>
+        <translation>Minimize window during execution</translation>
     </message>
     <message>
         <source>Enable colorful step table</source>
-        <translation>开启步骤表格的五彩色</translation>
+        <translation>Enable colorful step table</translation>
     </message>
     <message>
         <source>🤖 AI Token Config</source>
-        <translation>🤖 AI Token 配置</translation>
+        <translation>🤖 AI Token Config</translation>
     </message>
     <message>
         <source>🧠 AI Test</source>
-        <translation>🧠 AI 测试</translation>
+        <translation>🧠 AI Test</translation>
     </message>
     <message>
         <source>📁 File</source>
-        <translation>📁 文件</translation>
+        <translation>📁 File</translation>
     </message>
     <message>
         <source>📝 New Task</source>
-        <translation>📝 新建任务</translation>
+        <translation>📝 New Task</translation>
     </message>
     <message>
         <source>📤 Export Config</source>
-        <translation>📤 导出配置</translation>
+        <translation>📤 Export Config</translation>
     </message>
     <message>
         <source>📥 Import Config</source>
-        <translation>📥 导入配置</translation>
+        <translation>📥 Import Config</translation>
     </message>
     <message>
         <source>🚪 Exit</source>
-        <translation>🚪 退出</translation>
+        <translation>🚪 Exit</translation>
     </message>
     <message>
         <source>✏️ Edit</source>
-        <translation>✏️ 编辑</translation>
+        <translation>✏️ Edit</translation>
     </message>
     <message>
         <source>➕ Add Step</source>
-        <translation>➕ 添加步骤</translation>
+        <translation>➕ Add Step</translation>
     </message>
     <message>
         <source>✏️ Edit Step</source>
-        <translation>✏️ 编辑步骤</translation>
+        <translation>✏️ Edit Step</translation>
     </message>
     <message>
         <source>➖ Remove Step</source>
-        <translation>➖ 删除步骤</translation>
+        <translation>➖ Remove Step</translation>
     </message>
     <message>
         <source>🌐 Language</source>
-        <translation>🌐 语言</translation>
+        <translation>🌐 Language</translation>
     </message>
     <message>
         <source>🎨 Theme</source>
-        <translation>🎨 主题</translation>
+        <translation>🎨 Theme</translation>
     </message>
     <message>
         <source>☀️ Light Theme</source>
-        <translation>☀️ 明亮主题</translation>
+        <translation>☀️ Light Theme</translation>
     </message>
     <message>
         <source>🌙 Dark Theme</source>
-        <translation>🌙 暗黑主题</translation>
+        <translation>🌙 Dark Theme</translation>
     </message>
     <message>
         <source>🔄 System Theme</source>
-        <translation>🔄 跟随系统</translation>
+        <translation>🔄 System Theme</translation>
     </message>
     <message>
         <source>❓ Help</source>
-        <translation>❓ 帮助</translation>
+        <translation>❓ Help</translation>
     </message>
     <message>
         <source>ℹ️ About</source>
-        <translation>ℹ️ 关于</translation>
+        <translation>ℹ️ About</translation>
     </message>
     <message>
         <source>📚 Documentation</source>
-        <translation>📚 使用文档</translation>
+        <translation>📚 Documentation</translation>
     </message>
     <message>
         <source>Show Window</source>
-        <translation>显示窗口</translation>
+        <translation>Show Window</translation>
     </message>
     <message>
         <source>Hide Window</source>
-        <translation>隐藏窗口</translation>
+        <translation>Hide Window</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation>退出</translation>
+        <translation>Exit</translation>
     </message>
     <message>
         <source>Immediate execution mode</source>
-        <translation>立即执行模式</translation>
+        <translation>Immediate execution mode</translation>
     </message>
     <message>
         <source>Next run: {0}
 Every {1} min, Unlimited</source>
-        <translation>下次执行: {0}
-每 {1} 分钟重复，无限次</translation>
+        <translation>Next run: {0}
+Every {1} min, Unlimited</translation>
     </message>
     <message>
         <source>Next run: {0}
 Every {1} min, Total {2} times</source>
-        <translation>下次执行: {0}
-每 {1} 分钟重复，共 {2} 次</translation>
+        <translation>Next run: {0}
+Every {1} min, Total {2} times</translation>
     </message>
     <message>
         <source>Next run: {0}
 No interval, Total {1} times</source>
-        <translation>下次执行: {0}
-无间隔时间 共 {1} 次</translation>
+        <translation>Next run: {0}
+No interval, Total {1} times</translation>
     </message>
     <message>
         <source>Run immediately
 Every {0} min, Unlimited</source>
-        <translation>立即执行
-每 {0} 分钟重复，无限次</translation>
+        <translation>Run immediately
+Every {0} min, Unlimited</translation>
     </message>
     <message>
         <source>Run immediately
 Every {0} min, Total {1} times</source>
-        <translation>立即执行
-每 {0} 分钟重复，共 {1} 次</translation>
+        <translation>Run immediately
+Every {0} min, Total {1} times</translation>
     </message>
     <message>
         <source>Run immediately, no interval, Total {0} times</source>
-        <translation>立即执行，无间隔，共 {0} 次</translation>
+        <translation>Run immediately, no interval, Total {0} times</translation>
     </message>
     <message>
         <source>[{0}] ✅ [{1}] Created!</source>
-        <translation>[{0}] ✅ [{1}] 已创建！</translation>
+        <translation>[{0}] ✅ [{1}] Created!</translation>
     </message>
     <message>
         <source>[{0}] 📋 [{1}] → [{2}] Copied!</source>
-        <translation>[{0}] 📋 [{1}] → [{2}] 已复制！</translation>
+        <translation>[{0}] 📋 [{1}] → [{2}] Copied!</translation>
     </message>
     <message>
         <source>Rename Task</source>
-        <translation>重命名任务</translation>
+        <translation>Rename Task</translation>
     </message>
     <message>
         <source>Enter new name:</source>
-        <translation>请输入新名称：</translation>
+        <translation>Enter new name:</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation>提示</translation>
+        <translation>Warning</translation>
     </message>
     <message>
         <source>Task name cannot be empty!</source>
-        <translation>任务名称不能为空！</translation>
+        <translation>Task name cannot be empty!</translation>
     </message>
     <message>
         <source>Task '{0}' already exists.</source>
-        <translation>任务“{0}”已存在。</translation>
+        <translation>Task '{0}' already exists.</translation>
     </message>
     <message>
         <source>📝 Renamed: {0} → {1}</source>
-        <translation>📝 重命名：{0} → {1}</translation>
+        <translation>📝 Renamed: {0} → {1}</translation>
     </message>
     <message>
         <source>🗑️ Task Deleted: {0}</source>
-        <translation>🗑️ 已删除任务：{0}</translation>
+        <translation>🗑️ Task Deleted: {0}</translation>
     </message>
     <message>
         <source>No task selected</source>
-        <translation>未选择任务</translation>
+        <translation>No task selected</translation>
     </message>
     <message>
         <source>System</source>
-        <translation>系统</translation>
+        <translation>System</translation>
     </message>
     <message>
         <source>📋 Last task deleted, config reset</source>
-        <translation>📋 最后一个任务已删除，配置已重置</translation>
+        <translation>📋 Last task deleted, config reset</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation>运行中</translation>
+        <translation>Running</translation>
     </message>
     <message>
         <source>Stopped</source>
-        <translation>已停止</translation>
+        <translation>Stopped</translation>
     </message>
     <message>
         <source>Interrupted</source>
-        <translation>已中断</translation>
+        <translation>Interrupted</translation>
     </message>
     <message>
         <source>Running ({0}/{1})</source>
-        <translation>运行中 ({0}/{1})</translation>
+        <translation>Running ({0}/{1})</translation>
     </message>
     <message>
         <source>Invalid Settings</source>
-        <translation>无效设置</translation>
+        <translation>Invalid Settings</translation>
     </message>
     <message>
         <source>Repeat interval must be between 0-1440 minutes</source>
-        <translation>重复间隔必须在0-1440分钟之间</translation>
+        <translation>Repeat interval must be between 0-1440 minutes</translation>
     </message>
     <message>
         <source>Invalid Time</source>
-        <translation>无效时间</translation>
+        <translation>Invalid Time</translation>
     </message>
     <message>
         <source>Please select a valid execution time</source>
-        <translation>请选择有效的执行时间</translation>
+        <translation>Please select a valid execution time</translation>
     </message>
     <message>
         <source>Cannot Start</source>
-        <translation>无法启动</translation>
+        <translation>Cannot Start</translation>
     </message>
     <message>
         <source>Current task has no steps configured</source>
-        <translation>当前任务没有配置任何步骤</translation>
+        <translation>Current task has no steps configured</translation>
     </message>
-    <message>
+     <message>
         <source>
             &lt;h2&gt;Automation Task Manager Documentation&lt;/h2&gt;
             &lt;p&gt;Welcome to Automation Task Manager! This tool helps you automate repetitive computer operations.&lt;/p&gt;
@@ -443,45 +443,44 @@ Every {0} min, Total {1} times</source>
             A: &quot;Top-left one wins&quot;. It picks the first match found (top-to-bottom, left-to-right).&lt;/p&gt;
         </source>
         <translation>
-            &lt;h2&gt;自动化任务管理器使用文档&lt;/h2&gt;
-            &lt;p&gt;欢迎使用自动化任务管理器！本工具可以帮助您自动化执行重复的计算机操作。&lt;/p&gt;
-            &lt;p&gt;github开源链接：https://github.com/junior6666/AutoTask-UI-&lt;/p&gt;
+            &lt;h2&gt;Automation Task Manager Documentation&lt;/h2&gt;
+            &lt;p&gt;Welcome to Automation Task Manager! This tool helps you automate repetitive computer operations.&lt;/p&gt;
+            &lt;p&gt;GitHub Open Source: https://github.com/junior6666/AutoTask-UI-&lt;/p&gt;
             
-            &lt;h3&gt;基本功能&lt;/h3&gt;
+            &lt;h3&gt;Basic Functions&lt;/h3&gt;
             &lt;ul&gt;
-                &lt;li&gt;&lt;b&gt;创建任务&lt;/b&gt;：点击&quot;新建任务&quot;按钮创建新任务&lt;/li&gt;
-                &lt;li&gt;&lt;b&gt;添加步骤&lt;/b&gt;：在任务中添加鼠标点击、文本输入、等待等操作步骤&lt;/li&gt;
-                &lt;li&gt;&lt;b&gt;定时执行&lt;/b&gt;：根据任务需求设置任务的执行时间，点击开始当前任务按钮即可&lt;/li&gt;
-                &lt;li&gt;&lt;b&gt;执行日志&lt;/b&gt;：查看任务执行过程中的详细日志&lt;/li&gt;
+                &lt;li&gt;&lt;b&gt;Create Task&lt;/b&gt;: Click &quot;New Task&quot; to create a task.&lt;/li&gt;
+                &lt;li&gt;&lt;b&gt;Add Step&lt;/b&gt;: Add steps like Mouse Click, Text Input, Wait, etc.&lt;/li&gt;
+                &lt;li&gt;&lt;b&gt;Scheduled Execution&lt;/b&gt;: Set execution time and click &quot;Start Task&quot;.&lt;/li&gt;
+                &lt;li&gt;&lt;b&gt;Execution Log&lt;/b&gt;: View detailed logs during execution.&lt;/li&gt;
             &lt;/ul&gt;
             
-            &lt;h3&gt;配置说明&lt;/h3&gt;
-            &lt;p&gt;配置任务时，请确保：&lt;/p&gt;
+            &lt;h3&gt;Configuration&lt;/h3&gt;
+            &lt;p&gt;When configuring tasks, please ensure:&lt;/p&gt;
             &lt;ul&gt;
-                &lt;li&gt;图片路径正确不含有中文，且图片在屏幕上可见&lt;/li&gt;
-                &lt;li&gt;设置合适的识别精度和超时时间&lt;/li&gt;
-                &lt;li&gt;为需要等待的操作添加适当的延时&lt;/li&gt;
+                &lt;li&gt;Image paths are correct (no Chinese characters), and images are visible on screen.&lt;/li&gt;
+                &lt;li&gt;Set appropriate confidence and timeout values.&lt;/li&gt;
+                &lt;li&gt;Add appropriate delays for operations that need waiting.&lt;/li&gt;
             &lt;/ul&gt;
             
-            &lt;h3&gt;QQ交流群&lt;/h3&gt;
-            &lt;p&gt;加入我们的QQ交流群获取更多帮助：&lt;b&gt;1057721699&lt;/b&gt;&lt;/p&gt;
+            &lt;h3&gt;QQ Group&lt;/h3&gt;
+            &lt;p&gt;Join our QQ group for more help: &lt;b&gt;1057721699&lt;/b&gt;&lt;/p&gt;
             
-            &lt;h3&gt;常见问题&lt;/h3&gt;
-            &lt;p&gt;&lt;b&gt;Q: 为什么找不到图片？&lt;/b&gt;&lt;br&gt;
-            A: 请确保图片在屏幕上可见，且识别精度设置合适（建议0.8-0.9）&lt;/p&gt;
+            &lt;h3&gt;FAQ&lt;/h3&gt;
+            &lt;p&gt;&lt;b&gt;Q: Why image not found?&lt;/b&gt;&lt;br&gt;
+            A: Ensure image is visible on screen, and confidence is appropriate (0.8-0.9 recommended).&lt;/p&gt;
             
-            &lt;p&gt;&lt;b&gt;Q: 任务执行失败怎么办？&lt;/b&gt;&lt;br&gt;
-            A: 查看执行日志中的错误信息，调整步骤参数后重试&lt;/p&gt;
-            &lt;p&gt;&lt;b&gt;Q: 13:14如何计算的？&lt;/b&gt;&lt;br&gt;
-            A: 无论用户什么时候点击按钮，文案中的“相恋时间”都以 今天 13:14 为截止点计算。以确保定时在13：14发送的逻辑&lt;/p&gt;
-            &lt;p&gt;&lt;b&gt;Q: 开发框架？&lt;/b&gt;&lt;br&gt;
-            A: GUI：🐍 PySide6
+            &lt;p&gt;&lt;b&gt;Q: What if task fails?&lt;/b&gt;&lt;br&gt;
+            A: Check the execution log for errors, adjust parameters, and retry.&lt;/p&gt;
+            &lt;p&gt;&lt;b&gt;Q: How is 13:14 calculated?&lt;/b&gt;&lt;br&gt;
+            A: It calculates based on today&apos;s 13:14 regardless of when you click, for specific &quot;love time&quot; scheduling.&lt;/p&gt;
+            &lt;p&gt;&lt;b&gt;Q: Tech Stack?&lt;/b&gt;&lt;br&gt;
+            A: GUI: 🐍 PySide6
             Automation: 🤖 PyAutoGUI + 🔍 OpenCV&lt;/p&gt;
-            &lt;p&gt;&lt;b&gt;Q: 开发时长？&lt;/b&gt;&lt;br&gt;
-            A: 核心功能实现 2 days 不过一直在断断续续完善UI和修复各种bug 也欢迎大家参与到源码的开发&lt;/p&gt;
-            &lt;p&gt;&lt;b&gt;Q: pyautogui在定位图片位置时，若屏幕中有两个相同的图片，它会选择哪一个图片？？&lt;/b&gt;&lt;br&gt;
-            A: “谁最靠左上角，谁就中标；后面的即使一模一样也不会被理会。”
-            如果你想把所有相同图标都找出来，就必须用 locateAllOnScreen()，它会返回一个可迭代对象，里面包含所有匹配区域的坐标盒（left, top, width, height），顺序同样是先上后下、先左后右。（已实现）&lt;/p&gt;
+            &lt;p&gt;&lt;b&gt;Q: Development Time?&lt;/b&gt;&lt;br&gt;
+            A: Core features 2 days, plus ongoing UI improvements and bug fixes.&lt;/p&gt;
+            &lt;p&gt;&lt;b&gt;Q: How does it choose between duplicate images?&lt;/b&gt;&lt;br&gt;
+            A: &quot;Top-left one wins&quot;. It picks the first match found (top-to-bottom, left-to-right).&lt;/p&gt;
         </translation>
     </message>
 </context>
