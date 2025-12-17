@@ -2,11 +2,13 @@ from PySide6.QtCore import QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
     QCursor,
+    QImage,
     QKeyEvent,
     QMouseEvent,
     QPainter,
     QPainterPath,
     QPen,
+    QPixmap,
     QScreen,
 )
 from PySide6.QtWidgets import QApplication, QWidget
@@ -23,6 +25,7 @@ class RegionCaptureOverlay(QWidget):
 
     def __init__(self, background_pixmap=None):
         super().__init__(None)
+        # ... existing code ...
         self.setWindowFlags(
             Qt.FramelessWindowHint
             | Qt.WindowStaysOnTopHint
@@ -35,6 +38,20 @@ class RegionCaptureOverlay(QWidget):
         # 多屏幕支持
         self.screens = QApplication.screens()
         self.setGeometry(self._get_combined_screen_geometry())
+
+        # 背景截图 - 如果未传入，尝试自动补救截取（此时可能包含淡出动画，但也比递归好）
+        if background_pixmap and not background_pixmap.isNull():
+            print("✅ RegionCaptureOverlay received valid background_pixmap")
+            self.background_pixmap = background_pixmap
+        else:
+            print(
+                "⚠️ RegionCaptureOverlay received None/Null pixmap, attempting self-capture..."
+            )
+            self.background_pixmap = QApplication.primaryScreen().grabWindow(0)
+            if self.background_pixmap.isNull():
+                print("❌ Self-capture failed! background_pixmap is Null")
+            else:
+                print("✅ Self-capture successful")
 
         # 设置窗口属性
         self.setFocusPolicy(Qt.StrongFocus)
@@ -209,14 +226,20 @@ class RegionCaptureOverlay(QWidget):
 
     def _draw_selection(self, painter: QPainter, rect: QRect):
         """绘制选区"""
-        # 清除选区内的遮罩
-        painter.setCompositionMode(QPainter.CompositionMode_Clear)
-        painter.setBrush(Qt.transparent)
-        painter.setPen(Qt.NoPen)
-        painter.drawRect(rect)
-
-        # 恢复默认混合模式
-        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        # 清除选区内的遮罩 -> 改为绘制原图（确保与 magnifier 一致）
+        if self.background_pixmap:
+            # 计算在背景图中的源区域
+            # 注意：rect 是相对于窗口的，background_pixmap 也是 0,0 对齐的
+            source_rect = rect
+            target_rect = rect
+            painter.drawPixmap(target_rect, self.background_pixmap, source_rect)
+        else:
+            # 降级：如果没有背景图，只能用 Clear 模式
+            painter.setCompositionMode(QPainter.CompositionMode_Clear)
+            painter.setBrush(Qt.transparent)
+            painter.setPen(Qt.NoPen)
+            painter.drawRect(rect)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
 
         # 绘制红色边框
         pen = QPen(self.selection_color, 2)
@@ -285,45 +308,94 @@ class RegionCaptureOverlay(QWidget):
         painter.drawLine(pos.x(), 0, pos.x(), self.height())
 
     def _draw_magnifier(self, painter: QPainter, pos: QPoint):
-        """绘制放大镜 - 优化版"""
+        """绘制放大镜 - 终极重构版"""
         size = self.magnifier_size
-        radius = size // 2
 
-        # 1. 确定截图区域
-        # 确保截取区域的大小是奇数，这样才能保证鼠标指向的像素位于正中心
-        grab_size = int(size / self.magnification)
-        if grab_size % 2 == 0:
-            grab_size += 1
+        # -------------------------------------------------------------
+        # 1. 坐标映射与源图像提取 (核心修复)
+        # -------------------------------------------------------------
+        magnified_pixmap = None
 
-        x = pos.x() - grab_size // 2
-        y = pos.y() - grab_size // 2
+        # 检查背景图是否存在且有效
+        if self.background_pixmap and not self.background_pixmap.isNull():
+            bg_w = self.background_pixmap.width()
+            bg_h = self.background_pixmap.height()
+            widget_w = self.width()
+            widget_h = self.height()
 
-        # 确保不超出屏幕边界
-        screen = self._get_screen_at_point(pos)
-        screen_geo = screen.geometry()
+            # 计算物理像素与逻辑像素的比例 (DPI Scale Factor)
+            # 例如：屏幕逻辑宽度 1920，实际截图宽度 3840 -> scale_x = 2.0
+            scale_x = bg_w / widget_w if widget_w > 0 else 1.0
+            scale_y = bg_h / widget_h if widget_h > 0 else 1.0
 
-        # 2. 截取屏幕内容
-        # 注意：使用grabWindow比screenshot更高效
-        if self.background_pixmap:
-            # 从静态背景中截取
-            source_rect = QRect(x, y, grab_size, grab_size)
-            magnified = self.background_pixmap.copy(source_rect).scaled(
-                size, size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation
-            )
-        else:
-            screen_pixmap = screen.grabWindow(0, x, y, grab_size, grab_size)
-            if not screen_pixmap.isNull():
-                magnified = screen_pixmap.scaled(
+            # 目标：以鼠标为中心，在"物理图"上截取多大区域？
+            # 逻辑上我们需要截取 size / magnification 的大小
+            # 物理上需要乘以 scale
+            grab_size_logical = size / self.magnification
+            grab_w_physical = int(grab_size_logical * scale_x)
+            grab_h_physical = int(grab_size_logical * scale_y)
+
+            # 鼠标在"物理图"上的位置
+            mouse_x_physical = int(pos.x() * scale_x)
+            mouse_y_physical = int(pos.y() * scale_y)
+
+            # 计算物理源矩形 (Source Rect in Physical Coords)
+            src_x = mouse_x_physical - grab_w_physical // 2
+            src_y = mouse_y_physical - grab_h_physical // 2
+
+            source_rect = QRect(src_x, src_y, grab_w_physical, grab_h_physical)
+
+            # 安全裁剪：确保不超出背景图边界
+            # 注意：如果鼠标在屏幕边缘，source_rect 可能会超出 bg_rect
+            # 我们必须处理这个情况，否则 copy 会失败或返回空。
+            # 方案：Clamp Source Rect into Image
+            clamped_rect = QRect(source_rect)
+            if clamped_rect.left() < 0:
+                clamped_rect.moveLeft(0)
+            if clamped_rect.top() < 0:
+                clamped_rect.moveTop(0)
+            if clamped_rect.right() > bg_w:
+                clamped_rect.moveRight(bg_w)
+            if clamped_rect.bottom() > bg_h:
+                clamped_rect.moveBottom(bg_h)
+
+            # 提取图像
+            raw_img = self.background_pixmap.copy(clamped_rect).toImage()
+
+            if not raw_img.isNull():
+                # --- 修复变暗关键点 ---
+                # 强制转换为 RGB32 (忽略 Alpha)，确保 100% 不透明
+                raw_img = raw_img.convertToFormat(QImage.Format_RGB32)
+
+                # 缩放到目标显示大小 (size x size)
+                scaled_img = raw_img.scaled(
                     size, size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation
                 )
-            else:
-                return
+                magnified_pixmap = QPixmap.fromImage(scaled_img)
 
-        # 3. 绘制放大镜圆形区域
+        # -------------------------------------------------------------
+        # 2. 降级处理 (Fallback)
+        # -------------------------------------------------------------
+        if not magnified_pixmap:
+            # 如果上述过程失败（例如没有背景图），尝试直接抓屏
+            # 这是一个最后的保险，尽管可能会暗，但比黑屏好
+            screen = self._get_screen_at_point(pos)
+            grab_s = int(size / self.magnification)
+            screen_pix = screen.grabWindow(
+                0, pos.x() - grab_s // 2, pos.y() - grab_s // 2, grab_s, grab_s
+            )
+            if not screen_pix.isNull():
+                magnified_pixmap = screen_pix.scaled(
+                    size, size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation
+                )
+
+        # -------------------------------------------------------------
+        # 3. 绘制 UI
+        # -------------------------------------------------------------
         offset = 20
         magnifier_rect = QRect(pos.x() + offset, pos.y() + offset, size, size)
 
-        # 智能避让：如果右下角超出屏幕，则移动到左上角
+        # 智能避让
         if (
             magnifier_rect.right() > self.width()
             or magnifier_rect.bottom() > self.height()
@@ -347,20 +419,30 @@ class RegionCaptureOverlay(QWidget):
         path.addEllipse(magnifier_rect)
         painter.setClipPath(path)
 
-        # 绘制放大的图像
-        painter.drawPixmap(magnifier_rect, magnified)
+        # 绘制背景 (黑色) - 确保即便图也是透明的，底下也是黑的而不是混合色
+        painter.setBrush(Qt.black)
+        painter.setPen(Qt.NoPen)
+        painter.drawRect(magnifier_rect)
+
+        # 绘制图像
+        if magnified_pixmap and not magnified_pixmap.isNull():
+            painter.setOpacity(1.0)
+            painter.drawPixmap(magnifier_rect, magnified_pixmap)
 
         # 绘制中心十字准星
         center = magnifier_rect.center()
         painter.setPen(QPen(Qt.red, 1))
-        painter.drawLine(center.x() - 5, center.y(), center.x() + 5, center.y())
-        painter.drawLine(center.x(), center.y() - 5, center.x(), center.y() + 5)
+
+        # 修正：画十字时 +/- 5 可能会画歪，确保中心感
+        painter.drawLine(center.x() - 10, center.y(), center.x() + 10, center.y())
+        painter.drawLine(center.x(), center.y() - 10, center.x(), center.y() + 10)
 
         # 绘制边框
         painter.setPen(QPen(Qt.white, 2))
+        painter.setBrush(Qt.NoBrush)
         painter.drawEllipse(magnifier_rect)
 
-        # 绘制当前坐标和颜色值
+        # 绘制信息
         self._draw_pixel_info(painter, pos, magnifier_rect)
 
         painter.restore()

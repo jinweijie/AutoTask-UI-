@@ -307,26 +307,64 @@ class StepConfigDialog(QDialog):
         return "+".join(ordered)
 
     def capture_region(self):
+        # 1. 严格清理旧的 overlay 实例
+        if hasattr(self, "overlay") and self.overlay is not None:
+            try:
+                self.overlay.close()
+                self.overlay.deleteLater()
+            except Exception as e:
+                print(f"Error cleaning up overlay: {e}")
+            self.overlay = None
+
         parent = self.parent()
-        # 将原来的隐藏方法改为最小化
         if parent:
             parent.hide()
         self.hide()
 
-        # 延时一小段时间确保窗口以完全隐藏
-        QApplication.processEvents()
-        QThread.msleep(200)
+        # 使用 QTimer 异步延时，不阻塞事件循环，确保窗口彻底隐藏
+        # 增加到 500ms 以确保万无一失
+        from PySide6.QtCore import QTimer
 
+        QTimer.singleShot(500, self._perform_capture)
+
+    def _perform_capture(self):
         # 截取全屏
         screen = QApplication.primaryScreen()
+        bg_pixmap = None
         if screen:
-            self._temp_screenshot = screen.grabWindow(0)
+            bg_pixmap = screen.grabWindow(0)
+            self._temp_screenshot = bg_pixmap  # 保持引用
+
+            # --- DEBUG: 保存截图以验证是否偏暗 ---
+            import os
+
+            debug_dir = os.path.join(os.getcwd(), "img")
+            os.makedirs(debug_dir, exist_ok=True)
+            bg_pixmap.save(os.path.join(debug_dir, "debug_bg.png"))
+            # -----------------------------------
         else:
             self._temp_screenshot = None
 
-        self.overlay = RegionCaptureOverlay(background_pixmap=self._temp_screenshot)
+        self.overlay = RegionCaptureOverlay(background_pixmap=bg_pixmap)
         self.overlay.finished.connect(self.on_region_done)
+        self.overlay.cancelled.connect(self.on_region_cancelled)
         self.overlay.show()
+
+    def on_region_cancelled(self):
+        """处理取消截图的情况"""
+        # 清理
+        if hasattr(self, "overlay") and self.overlay is not None:
+            self.overlay.close()
+            self.overlay.deleteLater()
+            self.overlay = None
+
+        if hasattr(self, "_temp_screenshot"):
+            del self._temp_screenshot
+
+        parent = self.parent()
+        if parent:
+            parent.show()
+        self.show()
 
     def on_region_done(self, geo: QRect):
         # 先关闭覆盖层窗口（关键修复！）
