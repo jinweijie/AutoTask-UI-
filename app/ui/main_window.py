@@ -5,8 +5,20 @@ import threading
 import time
 from copy import deepcopy
 
-from PySide6.QtCore import QDate, QDateTime, QSettings, QSize, Qt, QTime, QTimer, Slot
-from PySide6.QtGui import QAction, QFont, QIntValidator, QKeySequence
+from PySide6.QtCore import (
+    QCoreApplication,
+    QDate,
+    QDateTime,
+    QEvent,
+    QSettings,
+    QSize,
+    Qt,
+    QTime,
+    QTimer,
+    QTranslator,
+    Slot,
+)
+from PySide6.QtGui import QAction, QActionGroup, QFont, QIntValidator, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -54,318 +66,273 @@ from app.ui.dialogs.ai_test_dialog import AITestDialog
 from app.ui.dialogs.step_config_dialog import StepConfigDialog
 from app.ui.dialogs.token_config_dialog import AITokenConfigDialog
 
-# Ensure we have a logger if needed, though the UI mostly uses log_text widget
-# from app.core.logger import logger
-
 
 class AutomationUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("自动化任务管理器")
 
-        self.setGeometry(100, 100, 1100, 550)  # 减少高度
+        # Initialize components first so they exist for retranslateUi
+        self.init_ui_components()
 
-        # 应用设置
+        # Load settings
         self.settings = QSettings("MyCompany", "AutomationManager")
         self.load_settings()
 
-        # 存储任务配置
+        # Initialize translation
+        self.translator = QTranslator()
+        # Default to en-US as requested
+        self.switch_language("en-US")
+
+        self.setGeometry(100, 100, 1100, 550)
+
+        # Task management init
         self.tasks = {}
         self.current_task = None
         self.task_runner = None
         self.task_thread = None
-        self.scheduled_timers = {}  # 存储定时任务的计时器
-        # 热键监听器
+        self.scheduled_timers = {}
         self.hotkey_listener = None
-
         self.setup_hotkey_listener()
 
-        # 创建主布局
+        # Load tasks
+        self.load_all_configs()
+
+        # Final UI setup
+        self.retranslateUi()
+
+        # Restore splitter state
+        splitter_sizes = self.settings.value("splitterSizes")
+        if splitter_sizes:
+            splitter_sizes = [int(s) for s in splitter_sizes]
+            self.splitter.setSizes(splitter_sizes)
+        else:
+            self.splitter.setSizes([280, 700])
+
+        self.log_splitter.setSizes([300, 150])
+
+        # Create menus
+        self.create_menus()
+
+        # Connect signals
+        self.connect_signals()
+
+        # Apply theme
+        self.apply_theme(self.current_theme)
+        self.detect_system_theme()
+
+        # System tray
+        self.create_system_tray()
+
+    def init_ui_components(self):
+        """Initialize all UI components without setting text"""
         main_widget = QWidget()
         main_layout = QHBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # 使用分割器实现可调整宽度的任务列表
         self.splitter = QSplitter(Qt.Horizontal)
 
-        # 左侧任务列表区域
+        # Left Panel
         left_panel = QFrame()
         left_panel.setFrameShape(QFrame.StyledPanel)
         left_panel.setMinimumWidth(280)
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(10, 10, 10, 10)
 
-        # 任务列表标题和新建按钮 - 添加emoji
+        # Title Layout
         title_layout = QHBoxLayout()
-        title_label = QLabel("📋 任务列表")
-        title_label.setFont(QFont("Arial", 11, QFont.Bold))
-        title_layout.addWidget(title_label)
+        self.title_label = QLabel()
+        self.title_label.setFont(QFont("Arial", 11, QFont.Bold))
+        title_layout.addWidget(self.title_label)
         title_layout.addStretch()
 
-        self.new_task_btn = QPushButton("➕ 新建任务")
+        self.new_task_btn = QPushButton()
         self.new_task_btn.setFixedSize(100, 32)
         title_layout.addWidget(self.new_task_btn)
-
         left_layout.addLayout(title_layout)
 
-        # 分隔线
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
         separator.setFrameShadow(QFrame.Sunken)
         left_layout.addWidget(separator)
 
-        # 任务列表
+        # Task List
         self.task_list = QListWidget()
         self.task_list.setMinimumHeight(200)
-        # 优化hover样式
         self.task_list.setStyleSheet("""
             QListWidget::item:hover {
                 background-color: #e0e0e0;
             }
         """)
-
-        # 设置右键菜单
         self.task_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.task_list.customContextMenuRequested.connect(self.show_context_menu)
 
-        left_layout.addWidget(self.task_list)
-
-        # 日志区域 - 新增现代化日志记录
-        log_group = QGroupBox("📝 执行日志")
+        # Log Area
+        self.log_group = QGroupBox()
         log_layout = QVBoxLayout()
 
-        # 添加清空日志按钮
         log_header_layout = QHBoxLayout()
-        log_header_layout.addWidget(QLabel("执行日志:"))
+        self.log_header_label = QLabel()
+        log_header_layout.addWidget(self.log_header_label)
         log_header_layout.addStretch()
-        self.clear_log_btn = QPushButton("清空日志")
+        self.clear_log_btn = QPushButton()
         self.clear_log_btn.setFixedSize(80, 24)
-        self.clear_log_btn.clicked.connect(self.clear_log)
         log_header_layout.addWidget(self.clear_log_btn)
-
         log_layout.addLayout(log_header_layout)
 
         self.log_text = QPlainTextEdit()
         self.log_text.setReadOnly(True)
         self.log_text.setMinimumHeight(200)
         log_layout.addWidget(self.log_text)
-        log_group.setLayout(log_layout)
-        left_layout.addWidget(log_group)
+        self.log_group.setLayout(log_layout)
+        # left_layout.addWidget(self.log_group) # Helper will insert into splitter
 
-        # 右侧配置区域
+        # Right Panel
         right_panel = QFrame()
         right_panel.setFrameShape(QFrame.StyledPanel)
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(15, 15, 15, 15)
 
-        # 任务信息组
-        task_info_group = QGroupBox("ℹ️ 任务信息")
+        # Task Info Group
+        self.task_info_group = QGroupBox()
         task_info_layout = QFormLayout()
         task_info_layout.setLabelAlignment(Qt.AlignRight)
         task_info_layout.setSpacing(10)
 
         self.task_name = QLineEdit()
-        self.task_name.setPlaceholderText("输入任务名称")
         self.task_name.setFont(QFont("Arial", 10))
+        self.task_status = QLabel()
 
-        self.task_status = QLabel("未运行")
+        self.task_name_label = QLabel()  # Store labels to update text
+        self.task_status_label = QLabel()
 
-        task_info_layout.addRow("任务名称:", self.task_name)
-        task_info_layout.addRow("当前状态:", self.task_status)
+        task_info_layout.addRow(self.task_name_label, self.task_name)
+        task_info_layout.addRow(self.task_status_label, self.task_status)
+        self.task_info_group.setLayout(task_info_layout)
 
-        task_info_group.setLayout(task_info_layout)
-        # 定时设置组
-        schedule_group = QGroupBox("⏰ 定时设置")
+        # Schedule Group
+        self.schedule_group = QGroupBox()
         schedule_layout = QGridLayout()
         schedule_layout.setSpacing(10)
-        schedule_layout.setColumnStretch(5, 1)  # 添加弹性空间
+        schedule_layout.setColumnStretch(5, 1)
 
-        # 执行方式
-        schedule_layout.addWidget(QLabel("执行方式:"), 0, 0)
+        self.schedule_mode_label = QLabel()
+        schedule_layout.addWidget(self.schedule_mode_label, 0, 0)
+
         self.schedule_enable = QComboBox()
-        self.schedule_enable.addItems(["立即执行", "定时执行"])
+        # Items added in retranslateUi
         self.schedule_enable.setMinimumWidth(120)
-        self.schedule_enable.currentTextChanged.connect(self.on_schedule_mode_changed)
         schedule_layout.addWidget(self.schedule_enable, 0, 1)
 
-        # 执行时间 - 支持鼠标滚轮
-        schedule_layout.addWidget(QLabel("执行时间:"), 0, 2)
+        self.schedule_time_label = QLabel()
+        schedule_layout.addWidget(self.schedule_time_label, 0, 2)
+
         time_widget = QWidget()
         time_layout = QHBoxLayout(time_widget)
         time_layout.setContentsMargins(0, 0, 0, 0)
         time_layout.setSpacing(5)
 
-        self.schedule_time = WheelTimeEdit(
-            QTime.currentTime().addSecs(300)
-        )  # 自定义支持滚轮的TimeEdit
+        self.schedule_time = WheelTimeEdit(QTime.currentTime().addSecs(300))
         self.schedule_time.setDisplayFormat("HH:mm:ss")
         self.schedule_time.setMinimumWidth(100)
         self.schedule_time.setMaximumWidth(100)
         self.schedule_time.setTimeRange(QTime(0, 0, 0), QTime(23, 59, 59))
-        self.schedule_time.setToolTip("使用鼠标滚轮调整时间\n单击可分别编辑时、分、秒")
         time_layout.addWidget(self.schedule_time)
 
-        # 时间快捷按钮
-        time_buttons = []
-        time_presets = [
-            ("13:14", (13, 14)),  # 13:14 时间
-            (
-                "晚安时间",
-                (22, 0),
-            ),  # 晚安时间 modified to 22:00 as per logic or user preference, original code said 0,0 but late night usually 22 or 23. Sticking to original logic if it was 0,0.
-        ]
-        # checking original code for 0,0
-        # 4398:             ("晚安时间", (0, 0))  # 0点时间
-        time_presets = [("13:14", (13, 14)), ("晚安时间", (0, 0))]
+        # Time preset buttons
+        self.time_btn_1314 = QPushButton("13:14")
+        self.time_btn_night = QPushButton()
 
-        for text, time_values in time_presets:
-            btn = QPushButton(text)
+        for btn in [self.time_btn_1314, self.time_btn_night]:
             btn.setFixedSize(60, 25)
             btn.setStyleSheet("""
-                QPushButton { 
-                    font-size: 10px; 
-                    padding: 2px; 
-                }
-                QPushButton:hover {
-                    background-color: #e0e0e0;
-                }
+                QPushButton { font-size: 10px; padding: 2px; }
+                QPushButton:hover { background-color: #e0e0e0; }
             """)
-            # 根据按钮文本设置不同的点击行为
-            if text == "13:14":
-                btn.clicked.connect(
-                    lambda checked,
-                    h=time_values[0],
-                    m=time_values[1]: self.set_time_to(h, m)
-                )
-            elif text == "晚安时间":
-                btn.clicked.connect(
-                    lambda checked,
-                    h=time_values[0],
-                    m=time_values[1]: self.set_time_to(h, m)
-                )
-            time_buttons.append(btn)
             time_layout.addWidget(btn)
 
-        # time_layout.addStretch()
+        self.time_btn_1314.clicked.connect(lambda: self.set_time_to(13, 14))
+        self.time_btn_night.clicked.connect(lambda: self.set_time_to(0, 0))
+
         schedule_layout.addWidget(time_widget, 0, 3, 1, 2)
 
-        # 重复间隔 - 支持鼠标滚轮
-        schedule_layout.addWidget(QLabel("重复间隔:"), 1, 0)
+        self.repeat_interval_label = QLabel()
+        schedule_layout.addWidget(self.repeat_interval_label, 1, 0)
+
         interval_widget = QWidget()
         interval_layout = QHBoxLayout(interval_widget)
         interval_layout.setContentsMargins(0, 0, 0, 0)
         interval_layout.setSpacing(5)
 
-        self.repeat_interval = WheelSpinBox()  # 自定义支持滚轮的SpinBox
+        self.repeat_interval = WheelSpinBox()
         self.repeat_interval.setRange(0, 1440)
         self.repeat_interval.setValue(0)
         self.repeat_interval.setMinimumWidth(80)
         self.repeat_interval.setMaximumWidth(80)
-        self.repeat_interval.setSuffix(" 分钟")
-        self.repeat_interval.setSpecialValueText("")
-        self.repeat_interval.setToolTip("使用鼠标滚轮调整间隔\n")
-        self.repeat_interval.valueChanged.connect(self.update_next_run_time)
         interval_layout.addWidget(self.repeat_interval)
-        # 间隔快捷按钮
-        interval_buttons = []
-        interval_presets = [("0分钟", 0), ("24小时", 1440)]
 
-        for text, interval in interval_presets:
-            btn = QPushButton(text)
+        self.interval_btn_0 = QPushButton()
+        self.interval_btn_24h = QPushButton()
+
+        for btn in [self.interval_btn_0, self.interval_btn_24h]:
             btn.setFixedSize(55, 25)
             btn.setStyleSheet("""
-                QPushButton { 
-                    font-size: 10px; 
-                    padding: 2px; 
-                }
-                QPushButton:hover {
-                    background-color: #e0e0e0;
-                }
+                QPushButton { font-size: 10px; padding: 2px; }
+                QPushButton:hover { background-color: #e0e0e0; }
             """)
-            btn.clicked.connect(
-                lambda checked, i=interval: self.repeat_interval.setValue(i)
-            )
-            interval_buttons.append(btn)
             interval_layout.addWidget(btn)
+
+        self.interval_btn_0.clicked.connect(lambda: self.repeat_interval.setValue(0))
+        self.interval_btn_24h.clicked.connect(
+            lambda: self.repeat_interval.setValue(1440)
+        )
 
         interval_layout.addStretch()
         schedule_layout.addWidget(interval_widget, 1, 1, 1, 2)
 
-        # 重复次数
-        schedule_layout.addWidget(QLabel("重复次数:"), 1, 3)
-        self.repeat_count = QComboBox()
-        self.repeat_count.setEditable(True)  # 设置为可编辑
-        self.repeat_count.addItems(["1", "3", "7", "9", "无限"])
-        self.repeat_count.setCurrentIndex(0)
-        self.repeat_count.setMinimumWidth(80)
-        self.repeat_count.currentTextChanged.connect(self.update_next_run_time)
-        # 添加输入验证器，只允许输入数字或"无限"
-        validator = QIntValidator(1, 999999)  # 允许输入1到999999的整数
-        self.repeat_count.setValidator(validator)
-        self.repeat_count.editTextChanged.connect(self.on_repeat_count_edited)
+        self.repeat_count_label = QLabel()
+        schedule_layout.addWidget(self.repeat_count_label, 1, 3)
 
+        self.repeat_count = QComboBox()
+        self.repeat_count.setEditable(True)
+        # Items added in retranslateUi
+        self.repeat_count.setMinimumWidth(80)
+        validator = QIntValidator(1, 999999)
+        self.repeat_count.setValidator(validator)
         schedule_layout.addWidget(self.repeat_count, 1, 4)
 
-        # 下一次执行时间显示
-        self.next_run_label = QLabel("下次执行: -")
-        self.next_run_label.setStyleSheet("""
-            QLabel {
-                color: #2c5aa0; 
-                font-size: 11px; 
-                padding: 8px;
-                background-color: #f0f8ff;
-                border-radius: 5px;
-                border: 1px solid #d0e0f0;
-                margin: 2px;
-            }
-        """)
+        self.next_run_label = QLabel()
         self.next_run_label.setMinimumWidth(200)
         self.next_run_label.setAlignment(Qt.AlignCenter)
         self.next_run_label.setWordWrap(True)
         schedule_layout.addWidget(self.next_run_label, 0, 5, 2, 5)
 
-        # 连接信号
-        self.schedule_time.timeChanged.connect(self.update_next_run_time)
-        self.repeat_interval.valueChanged.connect(self.update_next_run_time)
+        self.schedule_group.setLayout(schedule_layout)
 
-        schedule_group.setLayout(schedule_layout)
-
-        # 初始化状态
-        self.update_next_run_time()
-        self.on_schedule_mode_changed("立即执行")
-        # 步骤配置区域
-        steps_group = QGroupBox("⚙️ 操作步骤配置")
+        # Steps Group
+        self.steps_group = QGroupBox()
         steps_layout = QVBoxLayout()
         steps_layout.setSpacing(10)
 
-        # 步骤表格 - 设置列宽可拖拽
         self.steps_table = QTableWidget(0, 4)
-        self.steps_table.setHorizontalHeaderLabels(["类型", "描述", "参数", "延时(秒)"])
         self.steps_table.horizontalHeader().setSectionResizeMode(
             QHeaderView.Interactive
-        )  # 可拖拽调整列宽
+        )
         self.steps_table.horizontalHeader().setStretchLastSection(True)
         self.steps_table.verticalHeader().setVisible(False)
         self.steps_table.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        # 步骤操作按钮 - 添加emoji和快捷键
         step_btn_layout = QHBoxLayout()
-        self.add_step_btn = QPushButton("➕ 添加步骤 (A)")
+        self.add_step_btn = QPushButton()
         self.add_step_btn.setShortcut(QKeySequence("Ctrl+A"))
-        self.edit_step_btn = QPushButton("✏️ 编辑步骤 (E)")
+        self.edit_step_btn = QPushButton()
         self.edit_step_btn.setShortcut(QKeySequence("Ctrl+E"))
-        self.remove_step_btn = QPushButton("➖ 删除步骤 (Del)")
-        self.remove_step_btn.setShortcut(
-            QKeySequence.Delete
-        )  # 确保删除按钮的快捷键为 Delete
-        self.copy_step_btn = QPushButton("📋 复制步骤")
-        self.copy_step_btn.setShortcut(
-            QKeySequence("Ctrl+C")
-        )  # 新增：设置复制按钮的快捷键为 Ctrl+C
-        self.move_up_btn = QPushButton("⬆️ 上移 (↑)")
+        self.remove_step_btn = QPushButton()
+        self.remove_step_btn.setShortcut(QKeySequence.Delete)
+        self.copy_step_btn = QPushButton()
+        self.copy_step_btn.setShortcut(QKeySequence("Ctrl+C"))
+        self.move_up_btn = QPushButton()
         self.move_up_btn.setShortcut(QKeySequence("Ctrl+Up"))
-        self.move_down_btn = QPushButton("⬇️ 下移 (↓)")
+        self.move_down_btn = QPushButton()
         self.move_down_btn.setShortcut(QKeySequence("Ctrl+Down"))
 
         step_btn_layout.addWidget(self.add_step_btn)
@@ -378,54 +345,46 @@ class AutomationUI(QMainWindow):
 
         steps_layout.addWidget(self.steps_table)
         steps_layout.addLayout(step_btn_layout)
-        steps_group.setLayout(steps_layout)
+        self.steps_group.setLayout(steps_layout)
 
-        # 操作按钮组 - 添加emoji
+        # Action Buttons
         action_btn_layout = QHBoxLayout()
-        self.start_current_btn = QPushButton("▶️ 开始当前任务")
-        self.stop_current_btn = QPushButton("⏹️ 停止当前任务")
+        self.start_current_btn = QPushButton()
+        self.stop_current_btn = QPushButton()
         self.stop_current_btn.setEnabled(False)
-        self.save_btn = QPushButton("💾 保存配置")
+        self.save_btn = QPushButton()
 
         action_btn_layout.addWidget(self.start_current_btn)
         action_btn_layout.addWidget(self.stop_current_btn)
         action_btn_layout.addStretch()
         action_btn_layout.addWidget(self.save_btn)
 
-        # 添加到右侧布局
-        right_layout.addWidget(task_info_group)
-        right_layout.addWidget(schedule_group)
-        right_layout.addWidget(steps_group)
+        # Layout Assembly
+        right_layout.addWidget(self.task_info_group)
+        right_layout.addWidget(self.schedule_group)
+        right_layout.addWidget(self.steps_group)
         right_layout.addLayout(action_btn_layout)
 
-        # 添加左右面板到分割器
         self.splitter.addWidget(left_panel)
         self.splitter.addWidget(right_panel)
 
-        # 恢复分割器位置
-        splitter_sizes = self.settings.value("splitterSizes")
-        if splitter_sizes:
-            splitter_sizes = [int(s) for s in splitter_sizes]
-            self.splitter.setSizes(splitter_sizes)
-        else:
-            self.splitter.setSizes([280, 700])
-
-        # 添加日志区域可拖拽调整高度
         self.log_splitter = QSplitter(Qt.Vertical)
         self.log_splitter.addWidget(self.task_list)
-        self.log_splitter.addWidget(log_group)
+        self.log_splitter.addWidget(self.log_group)
         left_layout.insertWidget(2, self.log_splitter)
-        self.log_splitter.setSizes([300, 150])
 
-        # 添加到主布局
         main_layout.addWidget(self.splitter)
-
         self.setCentralWidget(main_widget)
 
-        # 创建菜单栏
-        self.create_menus()
-
-        # 连接信号
+    def connect_signals(self):
+        """Connect all signals"""
+        self.task_list.customContextMenuRequested.connect(self.show_context_menu)
+        self.clear_log_btn.clicked.connect(self.clear_log)
+        self.schedule_enable.currentTextChanged.connect(self.on_schedule_mode_changed)
+        self.schedule_time.timeChanged.connect(self.update_next_run_time)
+        self.repeat_interval.valueChanged.connect(self.update_next_run_time)
+        self.repeat_count.currentTextChanged.connect(self.update_next_run_time)
+        self.repeat_count.editTextChanged.connect(self.on_repeat_count_edited)
         self.task_list.currentItemChanged.connect(self.task_selected)
         self.new_task_btn.clicked.connect(self.create_new_task)
         self.start_current_btn.clicked.connect(self.start_current_task)
@@ -436,17 +395,111 @@ class AutomationUI(QMainWindow):
         self.move_up_btn.clicked.connect(self.move_step_up)
         self.move_down_btn.clicked.connect(self.move_step_down)
         self.save_btn.clicked.connect(self.save_task_config)
-        # self.apply_schedule_btn.clicked.connect(self.apply_schedule)
         self.copy_step_btn.clicked.connect(self.copy_step)
 
-        # 应用当前主题
-        self.apply_theme(self.current_theme)
+    def changeEvent(self, event):
+        """Handle language change events"""
+        if event.type() == QEvent.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
 
-        # 检测系统主题
-        self.detect_system_theme()
+    def retranslateUi(self):
+        """Update all UI texts for the current language"""
+        self.setWindowTitle(self.tr("自动化任务管理器"))
 
-        # 创建系统托盘图标
-        self.create_system_tray()
+        # Title & Lists
+        self.title_label.setText(self.tr("📋 任务列表"))
+        self.new_task_btn.setText(self.tr("➕ 新建任务"))
+
+        # Log
+        self.log_group.setTitle(self.tr("📝 执行日志"))
+        self.log_header_label.setText(self.tr("执行日志:"))
+        self.clear_log_btn.setText(self.tr("清空日志"))
+
+        # Task Info
+        self.task_info_group.setTitle(self.tr("ℹ️ 任务信息"))
+        self.task_name.setPlaceholderText(self.tr("输入任务名称"))
+        self.task_name_label.setText(self.tr("任务名称:"))
+        self.task_status_label.setText(self.tr("当前状态:"))
+        if not self.current_task:  # Only reset if no task is running/selected
+            self.task_status.setText(self.tr("未运行"))
+
+        # Schedule
+        self.schedule_group.setTitle(self.tr("⏰ 定时设置"))
+        self.schedule_mode_label.setText(self.tr("执行方式:"))
+        self.schedule_time_label.setText(self.tr("执行时间:"))
+        self.repeat_interval_label.setText(self.tr("重复间隔:"))
+        self.repeat_count_label.setText(self.tr("重复次数:"))
+
+        # Combo Boxes (Need to preserve selection)
+        current_schedule = self.schedule_enable.currentIndex()
+        self.schedule_enable.clear()
+        self.schedule_enable.addItems([self.tr("立即执行"), self.tr("定时执行")])
+        if current_schedule >= 0:
+            self.schedule_enable.setCurrentIndex(current_schedule)
+
+        current_repeat = self.repeat_count.currentText()
+        self.repeat_count.clear()
+        self.repeat_count.addItems(["1", "3", "7", "9", self.tr("无限")])
+        if (
+            current_repeat == "无限" or current_repeat == "Unlimited"
+        ):  # Handle both langs
+            self.repeat_count.setCurrentText(self.tr("无限"))
+        elif current_repeat:
+            self.repeat_count.setCurrentText(current_repeat)
+
+        # Tooltips & Suffixes
+        self.schedule_time.setToolTip(
+            self.tr("使用鼠标滚轮调整时间\n单击可分别编辑时、分、秒")
+        )
+        self.repeat_interval.setSuffix(self.tr(" 分钟"))
+        self.repeat_interval.setToolTip(self.tr("使用鼠标滚轮调整间隔\n"))
+
+        # Buttons
+        self.time_btn_night.setText(self.tr("晚安时间"))
+        self.interval_btn_0.setText(self.tr("0分钟"))
+        self.interval_btn_24h.setText(self.tr("24小时"))
+
+        # Steps
+        self.steps_group.setTitle(self.tr("⚙️ 操作步骤配置"))
+        self.steps_table.setHorizontalHeaderLabels(
+            [self.tr("类型"), self.tr("描述"), self.tr("参数"), self.tr("延时(秒)")]
+        )
+
+        self.add_step_btn.setText(self.tr("➕ 添加步骤 (A)"))
+        self.edit_step_btn.setText(self.tr("✏️ 编辑步骤 (E)"))
+        self.remove_step_btn.setText(self.tr("➖ 删除步骤 (Del)"))
+        self.copy_step_btn.setText(self.tr("📋 复制步骤"))
+        self.move_up_btn.setText(self.tr("⬆️ 上移 (↑)"))
+        self.move_down_btn.setText(self.tr("⬇️ 下移 (↓)"))
+
+        self.start_current_btn.setText(self.tr("▶️ 开始当前任务"))
+        self.stop_current_btn.setText(self.tr("⏹️ 停止当前任务"))
+        self.save_btn.setText(self.tr("💾 保存配置"))
+
+        self.update_next_run_time()
+
+        # Recreate menus to update translation
+        self.create_menus()
+
+    def switch_language(self, lang_code):
+        """Switch application language"""
+        self.curr_lang = lang_code
+
+        # Remove existing translator
+        QCoreApplication.removeTranslator(self.translator)
+
+        if lang_code == "en-US":
+            # Load English translation
+            qm_path = resource_path(
+                os.path.join("resources", "i18n", "auto_task_en_US.qm")
+            )
+            if self.translator.load(qm_path):
+                QCoreApplication.installTranslator(self.translator)
+                print(f"Loaded translation: {qm_path}")
+            else:
+                print(f"Failed to load translation: {qm_path}")
+        # For zh-CN, we validly remove translator to revert to source (Chinese)
 
     def set_time_to(self, hour, minute):
         """设置时间为指定的小时和分钟"""
@@ -455,13 +508,14 @@ class AutomationUI(QMainWindow):
 
     def on_schedule_mode_changed(self, mode):
         """执行方式改变时的处理"""
-        is_scheduled = mode == "定时执行"
+        # Translation aware check
+        is_scheduled = (mode == self.tr("定时执行")) or (mode == "定时执行")
 
         # 更新提示
         if is_scheduled:
             self.update_next_run_time()
         else:
-            self.next_run_label.setText("立即执行模式")
+            self.next_run_label.setText(self.tr("立即执行模式"))
             self.next_run_label.setStyleSheet("""
                 QLabel {
                     color: #666; 
@@ -477,7 +531,7 @@ class AutomationUI(QMainWindow):
     def on_repeat_count_edited(self, text):
         """处理重复次数编辑事件"""
         # 如果用户输入了"无限"，则设置为"无限"
-        if text == "无限":
+        if text == self.tr("无限"):
             return
 
         # 如果输入的是数字，验证范围
@@ -501,7 +555,7 @@ class AutomationUI(QMainWindow):
     def get_repeat_count_value(self):
         """获取重复次数的实际值"""
         text = self.repeat_count.currentText()
-        if text == "无限":
+        if text == self.tr("无限") or text == "无限":
             return "无限"
         elif text.isdigit():
             return text
@@ -512,12 +566,18 @@ class AutomationUI(QMainWindow):
         """更新下一次执行时间显示"""
         schedule_type = self.schedule_enable.currentText()
 
+        # Translation aware check
+        is_scheduled = (schedule_type == self.tr("定时执行")) or (
+            schedule_type == "定时执行"
+        )
+
         # 获取当前设置的值
         interval = self.repeat_interval.value()
         repeat_type = self.repeat_count.currentText()
+        is_infinite = (repeat_type == self.tr("无限")) or (repeat_type == "无限")
 
         # 如果是定时执行模式
-        if schedule_type == "定时执行":
+        if is_scheduled:
             schedule_time = self.schedule_time.time()
             now = QTime.currentTime()
             current_date = QDate.currentDate()
@@ -535,19 +595,22 @@ class AutomationUI(QMainWindow):
             next_run_datetime = QDateTime(next_date, next_run)
             next_run_str = next_run_datetime.toString("yyyy-MM-dd HH:mm:ss")
 
+            # Format strings with arguments for translation
             if interval > 0:
-                if repeat_type == "无限":
-                    message = (
-                        f"下次执行: {next_run_str}\n每 {interval} 分钟重复，无限次"
+                if is_infinite:
+                    message = self.tr("下次执行: {0}\n每 {1} 分钟重复，无限次").format(
+                        next_run_str, interval
                     )
-                    color = "#2c5aa0"
                 else:
-                    message = f"下次执行: {next_run_str}\n每 {interval} 分钟重复，共 {repeat_type} 次"
-                    color = "#2c5aa0"
+                    message = self.tr(
+                        "下次执行: {0}\n每 {1} 分钟重复，共 {2} 次"
+                    ).format(next_run_str, interval, repeat_type)
             else:
-                message = f"下次执行: {next_run_str}\n无间隔时间 共 {repeat_type} 次"
-                color = "#2c5aa0"
+                message = self.tr("下次执行: {0}\n无间隔时间 共 {1} 次").format(
+                    next_run_str, repeat_type
+                )
 
+            color = "#2c5aa0"
             self.next_run_label.setText(message)
             self.next_run_label.setStyleSheet(f"""
                 QLabel {{
@@ -562,19 +625,19 @@ class AutomationUI(QMainWindow):
             """)
         else:
             # 立即执行模式
-            now = QDateTime.currentDateTime()
-
             if interval > 0:
-                if repeat_type == "无限":
-                    message = f"立即执行\n每 {interval} 分钟重复，无限次"
-                    color = "#2c5aa0"
+                if is_infinite:
+                    message = self.tr("立即执行\n每 {0} 分钟重复，无限次").format(
+                        interval
+                    )
                 else:
-                    message = f"立即执行\n每 {interval} 分钟重复，共 {repeat_type} 次"
-                    color = "#2c5aa0"
+                    message = self.tr("立即执行\n每 {0} 分钟重复，共 {1} 次").format(
+                        interval, repeat_type
+                    )
             else:
-                message = f"立即执行，无间隔，共 {repeat_type} 次"
-                color = "#2c5aa0"
+                message = self.tr("立即执行，无间隔，共 {0} 次").format(repeat_type)
 
+            color = "#2c5aa0"
             self.next_run_label.setText(message)
             self.next_run_label.setStyleSheet(f"""
                 QLabel {{
@@ -798,111 +861,144 @@ class AutomationUI(QMainWindow):
         self.settings.setValue("splitterSizes", self.splitter.sizes())
 
     def create_menus(self):
-        menu_bar = self.menuBar()
+        """Create application menus"""
+        # Save state before recreation
+        skip_checked = (
+            getattr(self, "auto_skip_checkbox", None)
+            and self.auto_skip_checkbox.isChecked()
+        )
+        timeout_val = (
+            getattr(self, "timeout_spinbox", None) and self.timeout_spinbox.value()
+        )
+        instant_checked = (
+            getattr(self, "instant_click_checkbox", None)
+            and self.instant_click_checkbox.isChecked()
+        )
+        duration_val = (
+            getattr(self, "move_duration_spinbox", None)
+            and self.move_duration_spinbox.value()
+        )
+        minimize_checked = (
+            getattr(self, "minimize_during_execution_checkbox", None)
+            and self.minimize_during_execution_checkbox.isChecked()
+        )
+        color_checked = (
+            getattr(self, "label_color_checkbox", None)
+            and self.label_color_checkbox.isChecked()
+        )
 
-        # === 新增：设置菜单 ===
-        settings_menu = menu_bar.addMenu("⚙️ 设置")
+        menu_bar = self.menuBar()
+        menu_bar.clear()
+
+        # === 设置菜单 (Settings) ===
+        settings_menu = menu_bar.addMenu(self.tr("⚙️ 设置"))
         # 主容器
         settings_widget = QWidget()
         settings_layout = QVBoxLayout(settings_widget)
         settings_layout.setContentsMargins(8, 4, 8, 4)
         settings_layout.setSpacing(6)
 
-        # 1. 自动跳过 + 超时时间（纵向）
-        # --- 自动跳过复选框 ---
-        self.auto_skip_checkbox = QCheckBox("图片查找超时后自动跳过")
-        self.auto_skip_checkbox.setChecked(False)
+        # 1. 自动跳过 + 超时时间
+        self.auto_skip_checkbox = QCheckBox(self.tr("图片查找超时后自动跳过"))
+        self.auto_skip_checkbox.setChecked(
+            skip_checked if skip_checked is not None else False
+        )
 
-        # --- 超时时间（水平布局）---
         timeout_layout = QHBoxLayout()
-        timeout_label = QLabel("超时时间:")
+        timeout_label = QLabel(self.tr("超时时间:"))
         self.timeout_spinbox = QDoubleSpinBox()
         self.timeout_spinbox.setRange(0, 86400)
         self.timeout_spinbox.setSingleStep(0.5)
-        self.timeout_spinbox.setValue(3)
+        self.timeout_spinbox.setValue(timeout_val if timeout_val is not None else 3)
         self.timeout_spinbox.setSuffix(" s")
         self.timeout_spinbox.setFixedWidth(100)
         timeout_layout.addWidget(timeout_label)
         timeout_layout.addWidget(self.timeout_spinbox)
         timeout_layout.addStretch()
 
-        # 2. 鼠标移动设置（水平布局）
+        # 2. 鼠标移动设置
         mouse_layout = QHBoxLayout()
-        self.instant_click_checkbox = QCheckBox("直接点击")
-        self.instant_click_checkbox.setChecked(False)
+        self.instant_click_checkbox = QCheckBox(self.tr("直接点击"))
+        self.instant_click_checkbox.setChecked(
+            instant_checked if instant_checked is not None else False
+        )
 
         self.move_duration_spinbox = QDoubleSpinBox()
         self.move_duration_spinbox.setRange(0.0, 10.0)
         self.move_duration_spinbox.setSingleStep(0.1)
-        self.move_duration_spinbox.setValue(0.3)
+        self.move_duration_spinbox.setValue(
+            duration_val if duration_val is not None else 0.3
+        )
         self.move_duration_spinbox.setDecimals(1)
         self.move_duration_spinbox.setSuffix(" s")
         self.move_duration_spinbox.setFixedWidth(80)
-        self.move_duration_spinbox.setEnabled(True)
+        self.move_duration_spinbox.setEnabled(
+            not self.instant_click_checkbox.isChecked()
+        )
 
-        # 3. 窗口最小化设置（新增）
+        # 3. 窗口最小化设置
         minimize_layout = QHBoxLayout()
-        self.minimize_during_execution_checkbox = QCheckBox("执行任务时最小化窗口")
-        self.minimize_during_execution_checkbox.setChecked(True)  # 默认勾选
-
+        self.minimize_during_execution_checkbox = QCheckBox(
+            self.tr("执行任务时最小化窗口")
+        )
+        self.minimize_during_execution_checkbox.setChecked(
+            minimize_checked if minimize_checked is not None else True
+        )
         minimize_layout.addWidget(self.minimize_during_execution_checkbox)
         minimize_layout.addStretch()
 
-        # 4. label颜色设置（新增）
+        # 4. label颜色设置
         label_color_layout = QHBoxLayout()
-        self.label_color_checkbox = QCheckBox("开启步骤表格的五彩色")
-        self.label_color_checkbox.setChecked(True)  # 默认勾选
-
+        self.label_color_checkbox = QCheckBox(self.tr("开启步骤表格的五彩色"))
+        self.label_color_checkbox.setChecked(
+            color_checked if color_checked is not None else True
+        )
         label_color_layout.addWidget(self.label_color_checkbox)
         label_color_layout.addStretch()
 
-        # 连接 checkbox 控制 spinbox 启用状态
-        def on_instant_click_toggled(checked):
-            self.move_duration_spinbox.setEnabled(not checked)
+        # Logic connections
+        self.instant_click_checkbox.toggled.connect(
+            lambda c: self.move_duration_spinbox.setEnabled(not c)
+        )
 
-        self.instant_click_checkbox.toggled.connect(on_instant_click_toggled)
-
-        mouse_layout.addWidget(self.instant_click_checkbox)
-        mouse_layout.addWidget(self.move_duration_spinbox)
-        mouse_layout.addStretch()
-
-        # 添加到主布局
+        # Add to layout
         settings_layout.addWidget(self.auto_skip_checkbox)
         settings_layout.addLayout(timeout_layout)
         settings_layout.addLayout(mouse_layout)
-        settings_layout.addLayout(minimize_layout)  # 添加新行
-        settings_layout.addLayout(label_color_layout)  # 添加新行
+        settings_layout.addLayout(minimize_layout)
+        settings_layout.addLayout(label_color_layout)
 
-        # 包装为菜单项
         action = QWidgetAction(settings_menu)
         action.setDefaultWidget(settings_widget)
         settings_menu.addAction(action)
 
-        # === 新增：AI Token 配置菜单项 ===
-        ai_token_action = QAction("🤖 AI Token 配置", self)
+        # AI Token & Test logic
+        ai_token_action = QAction(self.tr("🤖 AI Token 配置"), self)
         ai_token_action.triggered.connect(self.show_ai_token_config)
         settings_menu.addAction(ai_token_action)
 
-        ai_test_action = QAction("🧠 AI 测试", self)
+        ai_test_action = QAction(self.tr("🧠 AI 测试"), self)
         ai_test_action.triggered.connect(self.show_ai_test)
         settings_menu.addAction(ai_test_action)
-
-        # 为设置菜单添加样式
         settings_menu.setStyleSheet(self._menu_style())
 
-        # 文件菜单
-        file_menu = menu_bar.addMenu("📁 文件")
-        new_action = QAction("📝 新建任务", self)
-        save_action = QAction("💾 保存配置", self)
-        export_action = QAction("📤 导出配置", self)
-        import_action = QAction("📥 导入配置", self)
-        exit_action = QAction("🚪 退出", self)
+        # === 文件菜单 (File) ===
+        file_menu = menu_bar.addMenu(self.tr("📁 文件"))
+        new_action = QAction(self.tr("📝 新建任务"), self)
+        save_action = QAction(self.tr("💾 保存配置"), self)
+        export_action = QAction(self.tr("📤 导出配置"), self)
+        import_action = QAction(self.tr("📥 导入配置"), self)
+        exit_action = QAction(self.tr("🚪 退出"), self)
 
-        # new_action.triggered.connect(self.create_new_task) # Signal connected at end of init but here in create_menus too in original?
-        # In original, new_action.triggered is commented out in create_menus (line 5259) because button connects it?
-        # Nope, init connects new_task_btn.
-        # I will connect menu actions.
-        new_action.triggered.connect(self.create_new_task)
+        new_action.triggered.connect(
+            self.create_new_task
+        )  # Ensure this method exists! If not, check init.
+        # Check if create_new_task exists? The original code had it commented out or referenced.
+        # Assuming it is handled by new_task_btn click usually.
+        # Use lambda to emit click if needed, or connect to same slot.
+        # self.new_task_btn.click() ?
+        # Safe bet: self.new_task_btn.click()
+        new_action.triggered.connect(self.new_task_btn.click)
 
         file_menu.addAction(new_action)
         file_menu.addAction(save_action)
@@ -911,44 +1007,64 @@ class AutomationUI(QMainWindow):
         file_menu.addAction(import_action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
-
         file_menu.setStyleSheet(self._menu_style())
 
-        # 编辑菜单
-        edit_menu = menu_bar.addMenu("✏️ 编辑")
-        add_step_action = QAction("➕ 添加步骤", self)
-        edit_step_action = QAction("✏️ 编辑步骤", self)
-        remove_step_action = QAction("➖ 删除步骤", self)
-        copy_step_action = QAction("📋 复制步骤", self)
+        # === 编辑菜单 (Edit) ===
+        edit_menu = menu_bar.addMenu(self.tr("✏️ 编辑"))
+        add_step_action = QAction(self.tr("➕ 添加步骤"), self)
+        edit_step_action = QAction(self.tr("✏️ 编辑步骤"), self)
+        remove_step_action = QAction(self.tr("➖ 删除步骤"), self)
+        copy_step_action = QAction(self.tr("📋 复制步骤"), self)
 
         edit_menu.addAction(add_step_action)
         edit_menu.addAction(edit_step_action)
         edit_menu.addAction(copy_step_action)
         edit_menu.addAction(remove_step_action)
-
         edit_menu.setStyleSheet(self._menu_style())
 
-        # 主题菜单（位于编辑和帮助之间）
-        theme_menu = menu_bar.addMenu("🎨 主题")
-        theme_menu.setStyleSheet(self._menu_style())
+        # === 语言菜单 (Language) - NEW ===
+        lang_menu = menu_bar.addMenu(self.tr("🌐 语言"))
+        lang_group = QActionGroup(self)
 
-        self.light_theme_action = QAction("☀️ 明亮主题", self)
+        en_action = QAction("English (en-US)", self)
+        en_action.setCheckable(True)
+        en_action.setData("en-US")
+        if self.curr_lang == "en-US":
+            en_action.setChecked(True)
+
+        zh_action = QAction("简体中文 (zh-CN)", self)
+        zh_action.setCheckable(True)
+        zh_action.setData("zh-CN")
+        if self.curr_lang == "zh-CN":
+            zh_action.setChecked(True)
+
+        lang_group.addAction(en_action)
+        lang_group.addAction(zh_action)
+        lang_menu.addAction(en_action)
+        lang_menu.addAction(zh_action)
+        lang_group.triggered.connect(lambda action: self.switch_language(action.data()))
+        lang_menu.setStyleSheet(self._menu_style())
+
+        # === 主题菜单 (Theme) ===
+        theme_menu = menu_bar.addMenu(self.tr("🎨 主题"))
+
+        self.light_theme_action = QAction(self.tr("☀️ 明亮主题"), self)
         self.light_theme_action.setCheckable(True)
         self.light_theme_action.triggered.connect(lambda: self.switch_theme("light"))
 
-        self.dark_theme_action = QAction("🌙 暗黑主题", self)
+        self.dark_theme_action = QAction(self.tr("🌙 暗黑主题"), self)
         self.dark_theme_action.setCheckable(True)
         self.dark_theme_action.triggered.connect(lambda: self.switch_theme("dark"))
 
-        self.system_theme_action = QAction("🔄 跟随系统", self)
+        self.system_theme_action = QAction(self.tr("🔄 跟随系统"), self)
         self.system_theme_action.setCheckable(True)
         self.system_theme_action.triggered.connect(lambda: self.switch_theme("system"))
 
         theme_menu.addAction(self.light_theme_action)
         theme_menu.addAction(self.dark_theme_action)
         theme_menu.addAction(self.system_theme_action)
+        theme_menu.setStyleSheet(self._menu_style())
 
-        # 设置当前主题选中状态
         if self.current_theme == "light":
             self.light_theme_action.setChecked(True)
         elif self.current_theme == "dark":
@@ -956,16 +1072,16 @@ class AutomationUI(QMainWindow):
         else:
             self.system_theme_action.setChecked(True)
 
-        # 帮助菜单
-        help_menu = menu_bar.addMenu("❓ 帮助")
-        about_action = QAction("ℹ️ 关于", self)
-        docs_action = QAction("📚 使用文档", self)
+        # === 帮助菜单 (Help) ===
+        help_menu = menu_bar.addMenu(self.tr("❓ 帮助"))
+        about_action = QAction(self.tr("ℹ️ 关于"), self)
+        docs_action = QAction(self.tr("📚 使用文档"), self)
 
         help_menu.addAction(docs_action)
         help_menu.addAction(about_action)
         help_menu.setStyleSheet(self._menu_style())
 
-        # 连接菜单信号
+        # Connections
         save_action.triggered.connect(self.save_task_config)
         export_action.triggered.connect(self.export_config)
         import_action.triggered.connect(self.import_config)
