@@ -3,7 +3,7 @@ from datetime import date, datetime, time, timedelta
 
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
-from PySide6.QtCore import QDate, QDateTime, QRect, Qt, QTime
+from PySide6.QtCore import QDate, QDateTime, QRect, Qt, QThread, QTime
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -313,7 +313,18 @@ class StepConfigDialog(QDialog):
             parent.hide()
         self.hide()
 
-        self.overlay = RegionCaptureOverlay()
+        # 延时一小段时间确保窗口以完全隐藏
+        QApplication.processEvents()
+        QThread.msleep(200)
+
+        # 截取全屏
+        screen = QApplication.primaryScreen()
+        if screen:
+            self._temp_screenshot = screen.grabWindow(0)
+        else:
+            self._temp_screenshot = None
+
+        self.overlay = RegionCaptureOverlay(background_pixmap=self._temp_screenshot)
         self.overlay.finished.connect(self.on_region_done)
         self.overlay.show()
 
@@ -323,6 +334,10 @@ class StepConfigDialog(QDialog):
             self.overlay.close()  # 或者 self.overlay.hide()
             self.overlay.deleteLater()  # 可选，帮助 Qt 彻底清理
             self.overlay = None  # 可选，避免野指针
+
+        # 清理临时截图
+        if hasattr(self, "_temp_screenshot"):
+            del self._temp_screenshot
 
         parent = self.parent()
         if geo.isNull():
