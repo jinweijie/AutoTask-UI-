@@ -9,6 +9,7 @@ from PySide6.QtCore import QDate, QDateTime, QSettings, QSize, Qt, QTime, QTimer
 from PySide6.QtGui import QAction, QFont, QIntValidator, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -743,7 +744,9 @@ class AutomationUI(QMainWindow):
         """退出应用程序"""
         # Set a flag to indicate we really want to quit, bypassing minimize-to-tray
         self._force_close = True
-        self.close()
+        if hasattr(self, "tray_icon"):
+            self.tray_icon.hide()
+        QApplication.instance().quit()
 
     def closeEvent(self, event):
         """重写关闭事件"""
